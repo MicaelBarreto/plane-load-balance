@@ -14,22 +14,17 @@ var capacityProportions = { fc: 0, cc: 0, rc: 0 };
 var volumetricProfitProportions = {}; // { c1: w, c2: x, c3: y, c4: z }
 var volumetricProfitProportionsArray = []; // [ w, x, y, z ] descendent -> w > x > y > z
 var loadPreference = [];
+var results = {};
 const env = 'resolve' // resolve || test
 const totalTests = 0; // Number of test cases
 var i = 0;
 
 function setup() {
-    Rever essa logica
-    // Setup cargo proportions -> vol/ton
-    // var total = (frontCargo.ton + centralCargo.ton + rearCargo.ton) / (frontCargo.vol + centralCargo.vol + rearCargo.vol);
-    // capacityProportions.fc = ((frontCargo.ton / frontCargo.vol) * 100) / total; 
-    // capacityProportions.cc = ((centralCargo.ton / centralCargo.vol) * 100) / total;
-    // capacityProportions.rc = ((rearCargo.ton / rearCargo.vol) * 100) / total;
-    // console.log(total);
-    // console.log(capacityProportions.fc);
-    // console.log(capacityProportions.cc);
-    // console.log(capacityProportions.rc);
-    // console.log("=================================")
+    // Setup cargo proportions -> vol
+    var total = frontCargo.vol + centralCargo.vol + rearCargo.vol;
+    capacityProportions.fc = frontCargo.vol / total; 
+    capacityProportions.cc = centralCargo.vol / total;
+    capacityProportions.rc = rearCargo.vol / total;
     
     // Setup volumentric profit -> profit/vol_ton
     volumetricProfitProportions.c1 = (c1.profit/c1.vol_ton);
@@ -54,23 +49,54 @@ function calculateCargoLoad(load) {
     else if(load === 'c3') chosenLoad = c3
     else chosenLoad = c4
 
-    var frontTon = (chosenLoad.ton / capacityProportions.fc).toFixed(3);
-    // console.log(chosenLoad.ton)
-    // console.log(capacityProportions.fc)
-    // console.log(capacityProportions.cc)
-    // console.log(capacityProportions.rc)
-    // console.log("----------------------------------")
-    var centralTon = (chosenLoad.ton / capacityProportions.cc).toFixed(3);
-    var rearTon = (chosenLoad.ton / capacityProportions.rc).toFixed(3);
+    var frontVol = ((chosenLoad.vol_ton * chosenLoad.ton) * capacityProportions.fc).toFixed(3);
+    var centralVol = ((chosenLoad.vol_ton * chosenLoad.ton) * capacityProportions.cc).toFixed(3);
+    var rearVol = ((chosenLoad.vol_ton * chosenLoad.ton) * capacityProportions.rc).toFixed(3);
 
-    // console.log(frontTon)
-    // console.log(centralTon)
-    // console.log(rearTon)
-    // console.log("========================================")
+    if(
+        (frontVol <= frontCargo.vol && 
+        centralVol <= centralCargo.vol && 
+        rearVol <= rearCargo.vol) &&
+        (((frontVol / chosenLoad.vol_ton).toFixed(3)) <= frontCargo.ton &&
+        ((centralVol / chosenLoad.vol_ton).toFixed(3)) <= centralCargo.ton &&
+        ((rearVol / chosenLoad.vol_ton).toFixed(3)) <= rearCargo.ton)
+    ) {
+        frontCargo.vol -= frontVol;
+        frontCargo.ton -= (frontVol / chosenLoad.vol_ton).toFixed(3);
+
+        centralCargo.vol -= centralVol;
+        centralCargo.ton -= (centralVol / chosenLoad.vol_ton).toFixed(3);
+
+        rearCargo.vol -= rearVol;
+        rearCargo.ton -= (rearVol / chosenLoad.vol_ton).toFixed(3);
+
+        results[load] = {
+            'frontCargo': { ton: (frontVol / chosenLoad.vol_ton).toFixed(3), vol: frontVol },
+            'centralCargo': { ton: (centralVol / chosenLoad.vol_ton).toFixed(3), vol: centralVol },
+            'rearCargo': { ton: (rearVol / chosenLoad.vol_ton).toFixed(3), vol: rearVol }
+        };
+    } else {
+        balance(frontVol, centralVol, rearVol, chosenLoad)
+    }
+}
+
+function balance(frontVol, centralVol, rearVol, chosenLoad) {
+    // calculate possible ton by volume
+    var frontPossibleTon = frontCargo.vol / chosenLoad.vol_ton;
+    var centralPossibleTon = centralCargo.vol / chosenLoad.vol_ton;
+    var rearPossibleTon = rearCargo.vol / chosenLoad.vol_ton;
+    // calculate possible volume by ton
+    var frontPossibleVolume = frontCargo.ton * chosenLoad.vol_ton;
+    var centralPossibleVolume = centralCargo.ton * chosenLoad.vol_ton;
+    var rearPossibleVolume = rearCargo.ton * chosenLoad.vol_ton;
 }
 
 function printResults() {
-
+    console.log(results);
+    console.log('==============')
+    console.log('frontCargo', frontCargo)
+    console.log('centralCargo', centralCargo)
+    console.log('rearCargo', rearCargo)
 }
 
 function test() {
@@ -93,3 +119,4 @@ function main() {
 
 setup();
 loadBalance();
+printResults();
