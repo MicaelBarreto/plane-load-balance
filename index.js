@@ -80,7 +80,11 @@ function calculateCargoLoad(load) {
         var bal = balance(calc.ton, calc.vol, chosenLoad);
 
         if(bal) {
-
+            results[load] = {
+                'frontCargo': { ton: bal.ton.front, vol: bal.vol.front },
+                'centralCargo': { ton: bal.ton.central, vol: bal.vol.central },
+                'rearCargo': { ton: bal.ton.rear, vol: bal.vol.rear }
+            }
         }
     }
 }
@@ -104,9 +108,14 @@ function balance(ton, vol, chosenLoad) {
         vol.central / chosenLoad.vol_ton <= centralCargo.ton &&
         vol.rear / chosenLoad.vol_ton <= rearCargo.ton
     ) {
-
+        return { ton, vol };
     } else {
-        var calc = calculatePossibility(front, central, rear, chosenLoad);
+        var calc = calculatePossibility(
+            { ton: ton.front - 1, vol: vol.front - 1 }, 
+            { ton: ton.central - 1, vol: vol.central - 1 }, 
+            { ton: ton.rear - 1, vol: vol.rear - 1 }, 
+            chosenLoad
+        );
         var bal = balance(calc.ton, calc.vol, chosenLoad);
         return bal;
     }
