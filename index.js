@@ -76,19 +76,56 @@ function calculateCargoLoad(load) {
             'rearCargo': { ton: (rearVol / chosenLoad.vol_ton).toFixed(3), vol: rearVol }
         };
     } else {
-        balance(frontVol, centralVol, rearVol, chosenLoad)
+        var calc = calculatePossibility(frontCargo, centralCargo, rearCargo, chosenLoad);
+        var bal = balance(calc.ton, calc.vol, chosenLoad);
+
+        if(bal) {
+
+        }
     }
 }
 
-function balance(frontVol, centralVol, rearVol, chosenLoad) {
+function balance(ton, vol, chosenLoad) {
+    if(
+        ton.front.toFixed(3) <= 0 ||
+        ton.central.toFixed(3) <= 0 ||
+        ton.rear.toFixed(3) <= 0 ||
+        vol.front.toFixed(3) <= 0 ||
+        vol.central.toFixed(3) <= 0 ||
+        vol.rear.toFixed(3) <= 0
+    )
+        return false;
+
+    if(
+        ton.front * chosenLoad.vol_ton <= frontCargo.vol &&
+        ton.central * chosenLoad.vol_ton <= centralCargo.vol &&
+        ton.rear * chosenLoad.vol_ton <= rearCargo.vol &&
+        vol.front / chosenLoad.vol_ton <= frontCargo.ton &&
+        vol.central / chosenLoad.vol_ton <= centralCargo.ton &&
+        vol.rear / chosenLoad.vol_ton <= rearCargo.ton
+    ) {
+
+    } else {
+        var calc = calculatePossibility(front, central, rear, chosenLoad);
+        var bal = balance(calc.ton, calc.vol, chosenLoad);
+        return bal;
+    }
+}
+
+function calculatePossibility(front, central, rear, chosenLoad) {
     // calculate possible ton by volume
-    var frontPossibleTon = frontCargo.vol / chosenLoad.vol_ton;
-    var centralPossibleTon = centralCargo.vol / chosenLoad.vol_ton;
-    var rearPossibleTon = rearCargo.vol / chosenLoad.vol_ton;
+    var frontPossibleTon = front.vol / (chosenLoad.vol_ton * capacityProportions.fc);
+    var centralPossibleTon = central.vol / (chosenLoad.vol_ton * capacityProportions.cc);
+    var rearPossibleTon = rear.vol / (chosenLoad.vol_ton * capacityProportions.rc);
     // calculate possible volume by ton
-    var frontPossibleVolume = frontCargo.ton * chosenLoad.vol_ton;
-    var centralPossibleVolume = centralCargo.ton * chosenLoad.vol_ton;
-    var rearPossibleVolume = rearCargo.ton * chosenLoad.vol_ton;
+    var frontPossibleVolume = front.ton * (chosenLoad.vol_ton * capacityProportions.fc);
+    var centralPossibleVolume = central.ton * (chosenLoad.vol_ton * capacityProportions.cc);
+    var rearPossibleVolume = rear.ton * (chosenLoad.vol_ton * capacityProportions.rc);
+
+    return {
+        ton: { front: frontPossibleTon, central: centralPossibleTon, rear: rearPossibleTon}, 
+        vol: { front: frontPossibleVolume, central: centralPossibleVolume, rear: rearPossibleVolume}
+    };
 }
 
 function printResults() {
